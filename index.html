@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0f0f">
+<title>Marketplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+
+:root{
+  --bg:#0f0f0f;
+  --bg2:#181818;
+  --bg3:#222222;
+  --bg4:#2a2a2a;
+  --green:#00e676;
+  --green-dim:#00c853;
+  --green-muted:rgba(0,230,118,0.12);
+  --green-muted2:rgba(0,230,118,0.06);
+  --red:#ff5252;
+  --red-muted:rgba(255,82,82,0.12);
+  --amber:#ffab40;
+  --amber-muted:rgba(255,171,64,0.12);
+  --blue:#40c4ff;
+  --blue-muted:rgba(64,196,255,0.12);
+  --text:#f0f0f0;
+  --text2:#888;
+  --text3:#555;
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.12);
+  --radius:14px;
+  --radius-sm:10px;
+  --nav-h:68px;
+}
+
+html,body{
+  height:100%;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  font-size:15px;
+  overscroll-behavior:none;
+}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+
+.screen{
+  flex:1;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:0 0 calc(var(--nav-h) + 16px);
+  display:none;
+  -webkit-overflow-scrolling:touch;
+}
+.screen.active{display:block}
+
+/* ── TOP BAR ── */
+.topbar{
+  padding:env(safe-area-inset-top,16px) 20px 12px;
+  padding-top:max(env(safe-area-inset-top),16px);
+  background:var(--bg);
+  position:sticky;
+  top:0;
+  z-index:40;
+  border-bottom:1px solid var(--border);
+}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between}
+.wordmark{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-0.5px;color:var(--text)}
+.wordmark em{color:var(--green);font-style:normal}
+.topbar-sub{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;letter-spacing:0.04em}
+
+/* ── BOTTOM NAV ── */
+.nav{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  height:var(--nav-h);
+  padding-bottom:env(safe-area-inset-bottom,0);
+  background:rgba(15,15,15,0.92);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  display:flex;
+  z-index:50;
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;background:none;border:none;color:var(--text3);cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:0.03em;
+  text-transform:uppercase;transition:color 0.2s;padding:8px 0;
+}
+.nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke 0.2s}
+.nav-btn.active{color:var(--green)}
+.nav-btn.active svg{stroke:var(--green)}
+
+/* ── ADD FAB ── */
+.nav-btn.fab{
+  color:var(--bg);
+  position:relative;top:-6px;
+}
+.fab-inner{
+  width:52px;height:52px;border-radius:50%;
+  background:var(--green);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 6px var(--bg),0 4px 20px rgba(0,230,118,0.4);
+  transition:transform 0.15s,box-shadow 0.15s;
+}
+.fab-inner svg{stroke:var(--bg);width:24px;height:24px}
+.nav-btn.fab:active .fab-inner{transform:scale(0.93);box-shadow:0 0 0 6px var(--bg),0 2px 10px rgba(0,230,118,0.3)}
+.nav-btn.fab.active .fab-inner{background:var(--green-dim)}
+
+/* ── SECTION PADDING ── */
+.pad{padding:16px 16px 0}
+
+/* ── METRIC CARDS ── */
+.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px 16px 0}
+.metric-card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:14px 16px;
+  position:relative;
+  overflow:hidden;
+}
+.metric-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--accent,var(--green));
+  opacity:0.6;
+}
+.metric-label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px}
+.metric-value{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:var(--text);letter-spacing:-0.5px}
+.metric-value.pos{color:var(--green)}
+.metric-value.neg{color:var(--red)}
+.metric-card.wide{grid-column:1/-1}
+
+/* ── SECTION HEADER ── */
+.section-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 16px 10px;
+}
+.section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;letter-spacing:-0.2px}
+.section-count{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+
+/* ── ITEM CARDS ── */
+.item-card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  margin:0 16px 10px;
+  padding:14px 16px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  transition:transform 0.1s,border-color 0.2s;
+  position:relative;
+  overflow:hidden;
+}
+.item-card:active{transform:scale(0.98)}
+.item-card.sold{border-left:3px solid var(--green)}
+.item-card.listed{border-left:3px solid var(--blue)}
+.item-card.active-status{border-left:3px solid var(--amber)}
+
+.item-icon{
+  width:44px;height:44px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;flex-shrink:0;
+}
+.item-icon.sold{background:var(--green-muted)}
+.item-icon.listed{background:var(--blue-muted)}
+.item-icon.active-status{background:var(--amber-muted)}
+
+.item-body{flex:1;min-width:0}
+.item-name{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.item-meta{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px}
+
+.item-right{text-align:right;flex-shrink:0}
+.item-profit{font-family:'DM Mono',monospace;font-size:15px;font-weight:500}
+.item-profit.pos{color:var(--green)}
+.item-profit.neg{color:var(--red)}
+.item-profit.neutral{color:var(--text3)}
+.item-status-label{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;margin-top:2px}
+
+/* ── BADGE ── */
+.badge{
+  display:inline-flex;align-items:center;
+  padding:3px 8px;border-radius:20px;
+  font-size:10px;font-weight:600;letter-spacing:0.05em;
+  text-transform:uppercase;font-family:'DM Mono',monospace;
+}
+.badge-sold{background:var(--green-muted);color:var(--green)}
+.badge-listed{background:var(--blue-muted);color:var(--blue)}
+.badge-active{background:var(--amber-muted);color:var(--amber)}
+
+/* ── CHART ── */
+.chart-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);margin:0 16px;padding:16px;
+}
+.chart-wrap{position:relative;width:100%;height:180px;margin-top:12px}
+
+/* ── FILTER BAR ── */
+.filter-bar{
+  display:flex;gap:8px;padding:0 16px 12px;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-pill{
+  flex-shrink:0;padding:7px 14px;border-radius:20px;
+  font-size:12px;font-family:'DM Mono',monospace;font-weight:500;
+  border:1px solid var(--border);background:var(--bg2);color:var(--text3);
+  cursor:pointer;transition:all 0.15s;white-space:nowrap;
+}
+.filter-pill.active{background:var(--green-muted);border-color:var(--green);color:var(--green)}
+
+.search-wrap{padding:12px 16px 8px;position:relative}
+.search-input{
+  width:100%;padding:11px 16px 11px 40px;
+  border-radius:var(--radius-sm);
+  border:1px solid var(--border2);background:var(--bg2);
+  color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;
+}
+.search-input::placeholder{color:var(--text3)}
+.search-input:focus{outline:none;border-color:var(--green)}
+.search-icon{position:absolute;left:28px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none}
+
+/* ── ADD FORM ── */
+.form-section{padding:0 16px}
+.form-group{margin-bottom:14px}
+.form-label{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;display:block}
+.form-input{
+  width:100%;padding:13px 16px;
+  border-radius:var(--radius-sm);
+  border:1px solid var(--border2);background:var(--bg2);
+  color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;
+  transition:border-color 0.2s;
+  -webkit-appearance:none;
+}
+.form-input:focus{outline:none;border-color:var(--green)}
+.form-input::placeholder{color:var(--text3)}
+.form-input.money{font-family:'DM Mono',monospace;font-size:17px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+textarea.form-input{resize:none;min-height:80px;line-height:1.5}
+select.form-input{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+
+/* ── STATUS TOGGLE ── */
+.status-toggle{display:flex;gap:8px;margin-bottom:14px}
+.status-btn{
+  flex:1;padding:11px 8px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:var(--bg2);
+  color:var(--text3);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;
+  cursor:pointer;transition:all 0.15s;text-align:center;
+}
+.status-btn.sel-sold{border-color:var(--green);background:var(--green-muted);color:var(--green)}
+.status-btn.sel-listed{border-color:var(--blue);background:var(--blue-muted);color:var(--blue)}
+.status-btn.sel-active{border-color:var(--amber);background:var(--amber-muted);color:var(--amber)}
+
+/* ── SOLD FIELDS ── */
+#sold-fields,#edit-sold-fields{
+  background:var(--green-muted2);border:1px solid rgba(0,230,118,0.15);
+  border-radius:var(--radius-sm);padding:14px;margin-bottom:14px;
+}
+
+/* ── SUBMIT BTN ── */
+.submit-btn{
+  width:100%;padding:16px;border-radius:var(--radius);
+  background:var(--green);color:var(--bg);
+  font-size:16px;font-weight:600;font-family:'Syne',sans-serif;
+  border:none;cursor:pointer;letter-spacing:0.01em;
+  transition:opacity 0.15s,transform 0.1s;
+  margin-bottom:8px;
+}
+.submit-btn:active{opacity:0.85;transform:scale(0.98)}
+.clear-btn{
+  width:100%;padding:13px;border-radius:var(--radius);
+  background:transparent;color:var(--text3);
+  font-size:14px;font-family:'DM Sans',sans-serif;
+  border:1px solid var(--border);cursor:pointer;
+  transition:border-color 0.15s,color 0.15s;
+}
+.clear-btn:active{border-color:var(--border2);color:var(--text2)}
+
+/* ── DIVIDER ── */
+.divider{height:1px;background:var(--border);margin:16px 0}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:48px 24px;color:var(--text3)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty-text{font-size:14px;line-height:1.6}
+
+/* ── SHEET (bottom modal) ── */
+.sheet-bg{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,0.7);z-index:100;
+}
+.sheet-bg.open{display:flex;align-items:flex-end}
+.sheet{
+  background:var(--bg2);border-radius:20px 20px 0 0;
+  border-top:1px solid var(--border2);
+  width:100%;max-height:90vh;overflow-y:auto;
+  padding:0 0 env(safe-area-inset-bottom,16px);
+  animation:slideUp 0.3s cubic-bezier(0.32,0.72,0,1);
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--bg4);margin:12px auto 0}
+.sheet-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px 12px;border-bottom:1px solid var(--border);
+}
+.sheet-title{font-family:'Syne',sans-serif;font-weight:700;font-size:18px}
+.close-btn{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--bg3);border:none;color:var(--text2);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.sheet-body{padding:16px 20px}
+.sheet-footer{
+  display:flex;gap:10px;padding:0 20px 8px;
+  border-top:1px solid var(--border);padding-top:14px;
+}
+.del-btn{
+  padding:13px 16px;border-radius:var(--radius-sm);
+  background:var(--red-muted);border:1px solid rgba(255,82,82,0.25);
+  color:var(--red);font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;
+}
+.save-btn{
+  flex:1;padding:14px;border-radius:var(--radius-sm);
+  background:var(--green);color:var(--bg);
+  font-size:15px;font-family:'Syne',sans-serif;font-weight:700;
+  border:none;cursor:pointer;
+}
+.save-btn:active{opacity:0.85}
+
+/* ── QUICK SOLD PILL ── */
+.quick-sold{
+  font-size:11px;font-family:'DM Mono',monospace;
+  color:var(--green);background:var(--green-muted);
+  border:1px solid rgba(0,230,118,0.2);
+  border-radius:12px;padding:3px 8px;cursor:pointer;margin-top:4px;
+  display:inline-block;
+}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:calc(var(--nav-h) + 12px);left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--green);color:var(--bg);padding:10px 20px;
+  border-radius:20px;font-size:13px;font-weight:600;font-family:'DM Mono',monospace;
+  opacity:0;transition:opacity 0.2s,transform 0.2s;pointer-events:none;white-space:nowrap;z-index:999;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── EXPORT ── */
+.export-summary{background:var(--bg3);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);line-height:1.8}
+.export-summary strong{color:var(--green)}
+.export-option{display:flex;align-items:center;gap:14px;padding:16px 0;border-top:1px solid var(--border);cursor:pointer;transition:opacity 0.15s}
+.export-option:active{opacity:0.7}
+.export-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.export-info{flex:1}
+.export-title{font-weight:600;font-size:15px;margin-bottom:2px}
+.export-desc{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;line-height:1.4}
+.export-arrow{color:var(--text3);flex-shrink:0}
+@media print{body>*{display:none!important}#pdf-report{display:block!important;position:static!important}}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.item-card{animation:fadeIn 0.25s ease both}
+.metric-card{animation:fadeIn 0.3s ease both}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- DASHBOARD -->
+  <div id="screen-dashboard" class="screen active">
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div>
+          <div class="wordmark">Market<em>.</em></div>
+          <div class="topbar-sub" id="dash-subtitle">Loading…</div>
+        </div>
+      </div>
+    </div>
+    <div class="metrics-grid" id="metrics"></div>
+    <div class="section-header" style="padding-top:20px">
+      <span class="section-title">Profit overview</span>
+    </div>
+    <div class="chart-card">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="badge badge-sold">Profit</span>
+        <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">per sold item</span>
+      </div>
+      <div class="chart-wrap"><canvas id="profitChart" role="img" aria-label="Profit per sold item bar chart">No data.</canvas></div>
+    </div>
+    <div class="section-header">
+      <span class="section-title">Recent</span>
+      <span class="section-count" id="recent-count"></span>
+    </div>
+    <div id="recent-cards"></div>
+    <div style="height:8px"></div>
+  </div>
+
+  <!-- ITEMS -->
+  <div id="screen-items" class="screen">
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div class="wordmark">Items</div>
+      </div>
+    </div>
+    <div class="search-wrap">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input" type="text" id="search" placeholder="Search items…" oninput="renderItems()" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="filter-bar">
+      <button class="filter-pill active" data-filter="" onclick="setFilter(this,'')">All</button>
+      <button class="filter-pill" data-filter="active" onclick="setFilter(this,'active')">Active</button>
+      <button class="filter-pill" data-filter="listed" onclick="setFilter(this,'listed')">Listed</button>
+      <button class="filter-pill" data-filter="sold" onclick="setFilter(this,'sold')">Sold</button>
+      <button class="filter-pill" data-sort="profit-desc" onclick="setSort(this,'profit-desc')">Top profit</button>
+      <button class="filter-pill" data-sort="date-asc" onclick="setSort(this,'date-asc')">Oldest</button>
+    </div>
+    <div id="items-list"></div>
+    <div style="height:8px"></div>
+  </div>
+
+  <!-- ADD -->
+  <div id="screen-add" class="screen">
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div class="wordmark">Add item</div>
+      </div>
+    </div>
+    <div style="height:16px"></div>
+    <div class="form-section">
+      <div class="form-group">
+        <label class="form-label">Item name *</label>
+        <input class="form-input" type="text" id="add-name" placeholder="e.g. Sony PS5, IKEA desk…" autocomplete="off">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-input" id="add-cat">
+            <option value="">Select…</option>
+            <option>Electronics</option>
+            <option>Furniture</option>
+            <option>Clothing</option>
+            <option>Toys &amp; games</option>
+            <option>Sports</option>
+            <option>Tools</option>
+            <option>Books</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date purchased</label>
+          <input class="form-input" type="date" id="add-date">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Cost paid ($) *</label>
+          <input class="form-input money" type="number" id="add-cost" min="0" step="0.01" placeholder="0.00" inputmode="decimal">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Listed for ($)</label>
+          <input class="form-input money" type="number" id="add-listed" min="0" step="0.01" placeholder="0.00" inputmode="decimal">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <div class="status-toggle">
+          <button class="status-btn sel-active" id="st-active" onclick="setStatus('active')">Active</button>
+          <button class="status-btn" id="st-listed" onclick="setStatus('listed')">Listed</button>
+          <button class="status-btn" id="st-sold" onclick="setStatus('sold')">Sold</button>
+        </div>
+      </div>
+      <div id="sold-fields" style="display:none">
+        <div class="form-row">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Sold for ($)</label>
+            <input class="form-input money" type="number" id="add-sold" min="0" step="0.01" placeholder="0.00" inputmode="decimal">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Date sold</label>
+            <input class="form-input" type="date" id="add-sold-date">
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-input" id="add-notes" placeholder="Condition, where bought, buyer details…"></textarea>
+      </div>
+      <button class="submit-btn" onclick="addItem()">Save item</button>
+      <button class="clear-btn" onclick="clearForm()">Clear form</button>
+    </div>
+    <div style="height:16px"></div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="nav">
+    <button class="nav-btn active" id="nav-dashboard" onclick="showScreen('dashboard')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dash
+    </button>
+    <button class="nav-btn" id="nav-add" onclick="showScreen('add')">
+      <div class="fab-inner">
+        <svg viewBox="0 0 24 24" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </div>
+      Add
+    </button>
+    <button class="nav-btn" id="nav-items" onclick="showScreen('items')">
+      <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Items
+    </button>
+    <button class="nav-btn" id="nav-export" onclick="openExport()">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export
+    </button>
+  </nav>
+</div>
+
+<!-- EDIT SHEET -->
+<div class="sheet-bg" id="edit-sheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">Edit item</div>
+      <button class="close-btn" onclick="closeSheet()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <input type="hidden" id="edit-id">
+      <div class="form-group">
+        <label class="form-label">Item name</label>
+        <input class="form-input" type="text" id="edit-name">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-input" id="edit-cat">
+            <option value="">Select…</option>
+            <option>Electronics</option>
+            <option>Furniture</option>
+            <option>Clothing</option>
+            <option>Toys &amp; games</option>
+            <option>Sports</option>
+            <option>Tools</option>
+            <option>Books</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date purchased</label>
+          <input class="form-input" type="date" id="edit-date">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Cost ($)</label>
+          <input class="form-input money" type="number" id="edit-cost" min="0" step="0.01" inputmode="decimal">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Listed for ($)</label>
+          <input class="form-input money" type="number" id="edit-listed" min="0" step="0.01" inputmode="decimal">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <div class="status-toggle">
+          <button class="status-btn" id="est-active" onclick="setEditStatus('active')">Active</button>
+          <button class="status-btn" id="est-listed" onclick="setEditStatus('listed')">Listed</button>
+          <button class="status-btn" id="est-sold" onclick="setEditStatus('sold')">Sold</button>
+        </div>
+      </div>
+      <div id="edit-sold-fields" style="display:none">
+        <div class="form-row">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Sold for ($)</label>
+            <input class="form-input money" type="number" id="edit-sold" min="0" step="0.01" inputmode="decimal">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Date sold</label>
+            <input class="form-input" type="date" id="edit-sold-date">
+          </div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:14px">
+        <label class="form-label">Notes</label>
+        <textarea class="form-input" id="edit-notes"></textarea>
+      </div>
+    </div>
+    <div class="sheet-footer">
+      <button class="del-btn" onclick="deleteItem()">Delete</button>
+      <button class="save-btn" onclick="saveEdit()">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT SHEET -->
+<div class="sheet-bg" id="export-sheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">Export data</div>
+      <button class="close-btn" onclick="closeExport()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body" style="padding-bottom:0">
+      <div class="export-summary" id="export-summary"></div>
+      <div class="export-option" onclick="exportCSV()">
+        <div class="export-icon" style="background:rgba(0,230,118,0.12)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/></svg>
+        </div>
+        <div class="export-info">
+          <div class="export-title">Download CSV</div>
+          <div class="export-desc">Opens in Excel, Google Sheets, Numbers. All items included.</div>
+        </div>
+        <svg class="export-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="export-option" onclick="exportPDF()">
+        <div class="export-icon" style="background:rgba(255,82,82,0.12)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff5252" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h1a2 2 0 0 1 0 4H9v-4z"/><path d="M14 13h2"/><path d="M14 17h2"/></svg>
+        </div>
+        <div class="export-info">
+          <div class="export-title">Print / Save as PDF</div>
+          <div class="export-desc">Formatted summary with totals. Use browser print → Save as PDF.</div>
+        </div>
+        <svg class="export-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <p style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;text-align:center;padding:16px 0 8px">All items exported · data never leaves this device</p>
+    </div>
+  </div>
+</div>
+
+<!-- HIDDEN PDF REPORT TEMPLATE -->
+<div id="pdf-report" style="display:none"></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'fb_marketplace_items';
+let items = [];
+let currentStatus = 'active';
+let editStatus = 'active';
+let activeFilter = '';
+let activeSort = 'date-desc';
+let chartInst = null;
+
+const categoryEmoji = {
+  'Electronics':'📱','Furniture':'🪑','Clothing':'👕','Toys & games':'🎮',
+  'Sports':'⚽','Tools':'🔧','Books':'📚','Other':'📦',''  :'📦'
+};
+
+function loadItems(){
+  try{const s=localStorage.getItem(STORAGE_KEY);if(s)items=JSON.parse(s);}catch(e){items=[];}
+  render();
+}
+
+function saveItems(){
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(items));
+}
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+function fmt(n){
+  if(n===null||n===''||n===undefined)return null;
+  const v=parseFloat(n);
+  return '$'+v.toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function profit(item){
+  if(item.status!=='sold'||item.soldPrice===''||item.soldPrice===null||item.soldPrice===undefined)return null;
+  return parseFloat(item.soldPrice)-parseFloat(item.cost||0);
+}
+
+function roi(item){
+  const p=profit(item);
+  if(p===null||!parseFloat(item.cost))return null;
+  return p/parseFloat(item.cost)*100;
+}
+
+function showToast(msg,color){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.background=color||'var(--green)';
+  t.style.color=color?'#fff':'var(--bg)';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+function showScreen(s){
+  document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('screen-'+s).classList.add('active');
+  document.getElementById('nav-'+s).classList.add('active');
+  if(s==='dashboard')renderDashboard();
+  if(s==='items')renderItems();
+}
+
+function setFilter(el,val){
+  document.querySelectorAll('.filter-pill[data-filter]').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  activeFilter=val;
+  renderItems();
+}
+
+function setSort(el,val){
+  document.querySelectorAll('.filter-pill[data-sort]').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  activeSort=val;
+  renderItems();
+}
+
+function setStatus(s){
+  currentStatus=s;
+  ['active','listed','sold'].forEach(x=>{
+    const b=document.getElementById('st-'+x);
+    b.className='status-btn';
+    if(x===s)b.classList.add('sel-'+s);
+  });
+  document.getElementById('sold-fields').style.display=s==='sold'?'block':'none';
+}
+
+function setEditStatus(s){
+  editStatus=s;
+  ['active','listed','sold'].forEach(x=>{
+    const b=document.getElementById('est-'+x);
+    b.className='status-btn';
+    if(x===s)b.classList.add('sel-'+s);
+  });
+  document.getElementById('edit-sold-fields').style.display=s==='sold'?'block':'none';
+}
+
+function clearForm(){
+  ['add-name','add-cost','add-listed','add-sold','add-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('add-cat').value='';
+  document.getElementById('add-date').value='';
+  document.getElementById('add-sold-date').value='';
+  setStatus('active');
+}
+
+function addItem(){
+  const name=document.getElementById('add-name').value.trim();
+  const cost=document.getElementById('add-cost').value;
+  if(!name){showToast('Enter an item name','#ff5252');return;}
+  if(cost===''||isNaN(cost)){showToast('Enter the cost paid','#ff5252');return;}
+  const soldVal=document.getElementById('add-sold').value;
+  const item={
+    id:uid(),name,
+    category:document.getElementById('add-cat').value,
+    datePurchased:document.getElementById('add-date').value,
+    cost:parseFloat(cost),
+    listedPrice:document.getElementById('add-listed').value!==''?parseFloat(document.getElementById('add-listed').value):'',
+    status:currentStatus,
+    soldPrice:currentStatus==='sold'&&soldVal!==''?parseFloat(soldVal):'',
+    dateSold:document.getElementById('add-sold-date').value,
+    notes:document.getElementById('add-notes').value,
+    createdAt:Date.now()
+  };
+  items.unshift(item);
+  saveItems();
+  clearForm();
+  showToast('✓ Item saved');
+  showScreen('items');
+}
+
+function openEdit(id){
+  const item=items.find(i=>i.id===id);
+  if(!item)return;
+  document.getElementById('edit-id').value=id;
+  document.getElementById('edit-name').value=item.name;
+  document.getElementById('edit-cat').value=item.category||'';
+  document.getElementById('edit-date').value=item.datePurchased||'';
+  document.getElementById('edit-cost').value=item.cost;
+  document.getElementById('edit-listed').value=item.listedPrice||'';
+  document.getElementById('edit-sold').value=item.soldPrice||'';
+  document.getElementById('edit-sold-date').value=item.dateSold||'';
+  document.getElementById('edit-notes').value=item.notes||'';
+  setEditStatus(item.status||'active');
+  document.getElementById('edit-sheet').classList.add('open');
+}
+
+function closeSheet(){document.getElementById('edit-sheet').classList.remove('open');}
+
+function saveEdit(){
+  const id=document.getElementById('edit-id').value;
+  const idx=items.findIndex(i=>i.id===id);
+  if(idx<0)return;
+  const soldVal=document.getElementById('edit-sold').value;
+  items[idx]={...items[idx],
+    name:document.getElementById('edit-name').value.trim(),
+    category:document.getElementById('edit-cat').value,
+    datePurchased:document.getElementById('edit-date').value,
+    cost:parseFloat(document.getElementById('edit-cost').value)||0,
+    listedPrice:document.getElementById('edit-listed').value!==''?parseFloat(document.getElementById('edit-listed').value):'',
+    status:editStatus,
+    soldPrice:editStatus==='sold'&&soldVal!==''?parseFloat(soldVal):'',
+    dateSold:document.getElementById('edit-sold-date').value,
+    notes:document.getElementById('edit-notes').value
+  };
+  saveItems();
+  closeSheet();
+  showToast('✓ Changes saved');
+  renderItems();
+  renderDashboard();
+}
+
+function quickSold(id,e){
+  e.stopPropagation();
+  const item=items.find(i=>i.id===id);
+  if(!item)return;
+  openEdit(id);
+  setTimeout(()=>setEditStatus('sold'),50);
+}
+
+function deleteItem(){
+  if(!confirm('Delete this item?'))return;
+  const id=document.getElementById('edit-id').value;
+  items=items.filter(i=>i.id!==id);
+  saveItems();
+  closeSheet();
+  showToast('Item deleted','#ff5252');
+  renderItems();
+  renderDashboard();
+}
+
+function renderItems(){
+  const q=document.getElementById('search').value.toLowerCase();
+  let list=[...items];
+  if(q)list=list.filter(i=>i.name.toLowerCase().includes(q)||(i.category||'').toLowerCase().includes(q));
+  if(activeFilter)list=list.filter(i=>i.status===activeFilter);
+  list.sort((a,b)=>{
+    if(activeSort==='date-asc')return a.createdAt-b.createdAt;
+    if(activeSort==='profit-desc')return(profit(b)??-Infinity)-(profit(a)??-Infinity);
+    if(activeSort==='profit-asc')return(profit(a)??Infinity)-(profit(b)??Infinity);
+    return b.createdAt-a.createdAt;
+  });
+
+  const el=document.getElementById('items-list');
+  if(!list.length){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">📦</div><div class="empty-text">No items found</div></div>`;
+    return;
+  }
+  el.innerHTML=list.map((item,i)=>itemCard(item,i)).join('');
+}
+
+function itemCard(item,i){
+  const p=profit(item);
+  const r=roi(item);
+  const em=categoryEmoji[item.category||'']||'📦';
+  const statusClass=item.status==='sold'?'sold':item.status==='listed'?'listed':'active-status';
+  const profitStr=p!==null?(p>=0?'+':'')+fmt(p):(item.status==='listed'&&item.listedPrice!==''?'Listed: '+fmt(item.listedPrice):'Cost: '+fmt(item.cost));
+  const profitClass=p!==null?(p>=0?'pos':'neg'):'neutral';
+  const roiStr=r!==null?` · ${r>=0?'+':''}${r.toFixed(0)}%`:'';
+  const discount=item.listedPrice!==''&&item.soldPrice!==''?((item.listedPrice-item.soldPrice)/item.listedPrice*100):null;
+  const meta=item.category||(item.datePurchased?new Date(item.datePurchased).toLocaleDateString('en-CA',{month:'short',day:'numeric'}):'');
+  const quickBtn=item.status!=='sold'?`<div class="quick-sold" onclick="quickSold('${item.id}',event)">Mark sold →</div>`:'';
+  return `<div class="item-card ${statusClass}" onclick="openEdit('${item.id}')" style="animation-delay:${i*0.04}s">
+    <div class="item-icon ${statusClass}">${em}</div>
+    <div class="item-body">
+      <div class="item-name">${item.name}</div>
+      <div class="item-meta">${meta}${discount!=null?` · ${discount.toFixed(0)}% off ask`:''}</div>
+      ${quickBtn}
+    </div>
+    <div class="item-right">
+      <div class="item-profit ${profitClass}">${profitStr}</div>
+      <div class="item-status-label">${item.status}${roiStr}</div>
+    </div>
+  </div>`;
+}
+
+function renderDashboard(){
+  const sold=items.filter(i=>i.status==='sold');
+  const listed=items.filter(i=>i.status==='listed');
+  const active=items.filter(i=>i.status==='active');
+  const totalCost=items.reduce((s,i)=>s+parseFloat(i.cost||0),0);
+  const totalRevenue=sold.reduce((s,i)=>s+parseFloat(i.soldPrice||0),0);
+  const totalProfit=sold.reduce((s,i)=>s+(profit(i)||0),0);
+  const roiItems=sold.filter(i=>roi(i)!=null);
+  const avgROI=roiItems.length?roiItems.reduce((s,i)=>s+roi(i),0)/roiItems.length:null;
+  const potential=listed.reduce((s,i)=>s+parseFloat(i.listedPrice||0),0);
+
+  document.getElementById('dash-subtitle').textContent=`${items.length} item${items.length!==1?'s':''} tracked`;
+
+  document.getElementById('metrics').innerHTML=`
+    <div class="metric-card" style="--accent:var(--red)">
+      <div class="metric-label">Invested</div>
+      <div class="metric-value">${fmt(totalCost)||'$0.00'}</div>
+    </div>
+    <div class="metric-card" style="--accent:var(--green)">
+      <div class="metric-label">Revenue</div>
+      <div class="metric-value pos">${fmt(totalRevenue)||'$0.00'}</div>
+    </div>
+    <div class="metric-card" style="--accent:${totalProfit>=0?'var(--green)':'var(--red)'}">
+      <div class="metric-label">Net profit</div>
+      <div class="metric-value ${totalProfit>=0?'pos':'neg'}">${totalProfit>=0?'+':''}${fmt(totalProfit)||'$0.00'}</div>
+    </div>
+    <div class="metric-card" style="--accent:var(--blue)">
+      <div class="metric-label">Avg ROI</div>
+      <div class="metric-value ${avgROI!=null&&avgROI>=0?'pos':avgROI!=null?'neg':''}">${avgROI!=null?(avgROI>=0?'+':'')+avgROI.toFixed(1)+'%':'—'}</div>
+    </div>
+    <div class="metric-card wide" style="--accent:var(--amber)">
+      <div class="metric-label">Pipeline · ${listed.length} listed, ${active.length} active</div>
+      <div class="metric-value" style="color:var(--amber)">${listed.length?fmt(potential):'$0.00'} <span style="font-size:13px;color:var(--text3)">potential</span></div>
+    </div>
+  `;
+
+  const soldWithProfit=items.filter(i=>profit(i)!=null).slice(0,10);
+  const canvas=document.getElementById('profitChart');
+  if(!soldWithProfit.length){
+    canvas.parentElement.innerHTML='<div class="empty" style="padding:24px 0"><div class="empty-icon">📊</div><div class="empty-text">Sell something to see profit data</div></div>';
+  } else {
+    if(chartInst)chartInst.destroy();
+    const profits=soldWithProfit.map(i=>profit(i));
+    chartInst=new Chart(canvas,{
+      type:'bar',
+      data:{
+        labels:soldWithProfit.map(i=>i.name.length>12?i.name.slice(0,12)+'…':i.name),
+        datasets:[{
+          label:'Profit',data:profits,
+          backgroundColor:profits.map(p=>p>=0?'rgba(0,230,118,0.6)':'rgba(255,82,82,0.6)'),
+          borderColor:profits.map(p=>p>=0?'#00e676':'#ff5252'),
+          borderWidth:1,borderRadius:6,borderSkipped:false
+        }]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw>=0?'+':''}$${Math.abs(ctx.raw).toFixed(2)}`},backgroundColor:'#222',titleColor:'#888',bodyColor:'#f0f0f0',padding:10,cornerRadius:8}},
+        scales:{
+          y:{ticks:{callback:v=>(v>=0?'':'-')+'$'+Math.abs(v).toFixed(0),color:'#555',font:{family:'DM Mono, monospace',size:10}},grid:{color:'rgba(255,255,255,0.05)'},border:{display:false}},
+          x:{ticks:{color:'#555',font:{family:'DM Mono, monospace',size:10},maxRotation:30,autoSkip:false},grid:{display:false},border:{display:false}}
+        }
+      }
+    });
+  }
+
+  const recentEl=document.getElementById('recent-cards');
+  const recent=[...items].slice(0,5);
+  document.getElementById('recent-count').textContent=items.length?`${items.length} total`:'';
+  if(!recent.length){
+    recentEl.innerHTML='<div class="empty"><div class="empty-icon">🛍️</div><div class="empty-text">Add your first item to get started</div></div>';
+    return;
+  }
+  recentEl.innerHTML=recent.map((item,i)=>itemCard(item,i)).join('');
+}
+
+function render(){renderDashboard();renderItems();}
+
+
+function openExport(){
+  if(!items.length){showToast('No items to export','#ffab40');return;}
+  const sold=items.filter(i=>i.status==='sold');
+  const listed=items.filter(i=>i.status==='listed');
+  const totalCost=items.reduce((s,i)=>s+parseFloat(i.cost||0),0);
+  const totalRevenue=sold.reduce((s,i)=>s+parseFloat(i.soldPrice||0),0);
+  const totalProfit=sold.reduce((s,i)=>s+(profit(i)||0),0);
+  const f=n=>n!==null&&n!==''&&n!==undefined?'$'+parseFloat(n).toFixed(2):'—';
+  document.getElementById('export-summary').innerHTML=
+    `<div><strong>${items.length}</strong> items total &nbsp;·&nbsp; <strong>${sold.length}</strong> sold &nbsp;·&nbsp; <strong>${listed.length}</strong> listed</div>`+
+    `<div>Invested: <strong>${f(totalCost)}</strong> &nbsp;·&nbsp; Revenue: <strong>${f(totalRevenue)}</strong> &nbsp;·&nbsp; Profit: <strong style="color:${totalProfit>=0?'var(--green)':'var(--red)'}">${totalProfit>=0?'+':''}${f(totalProfit)}</strong></div>`;
+  document.getElementById('export-sheet').classList.add('open');
+}
+
+function closeExport(){document.getElementById('export-sheet').classList.remove('open');}
+
+function escapeCsv(v){
+  if(v===null||v===undefined||v==='')return '';
+  const s=String(v);
+  if(s.includes(',')||s.includes('"')||s.includes('\n'))return '"'+s.replace(/"/g,'""')+'"';
+  return s;
+}
+
+function exportCSV(){
+  const headers=['Name','Category','Date Purchased','Cost ($)','Listed Price ($)','Status','Sold Price ($)','Date Sold','Profit ($)','ROI (%)','Discount Off Ask (%)','Notes'];
+  const rows=items.map(item=>{
+    const p=profit(item);
+    const r=roi(item);
+    const disc=item.listedPrice!==''&&item.soldPrice!==''?((item.listedPrice-item.soldPrice)/item.listedPrice*100).toFixed(1):'';
+    return [
+      item.name,
+      item.category||'',
+      item.datePurchased||'',
+      item.cost,
+      item.listedPrice!==''?item.listedPrice:'',
+      item.status,
+      item.soldPrice!==''?item.soldPrice:'',
+      item.dateSold||'',
+      p!==null?p.toFixed(2):'',
+      r!==null?r.toFixed(1):'',
+      disc,
+      item.notes||''
+    ].map(escapeCsv).join(',');
+  });
+  const csv=[headers.join(','),...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const date=new Date().toISOString().slice(0,10);
+  a.href=url;a.download=`marketplace-${date}.csv`;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+  showToast('✓ CSV downloaded');
+  closeExport();
+}
+
+function exportPDF(){
+  const date=new Date().toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'});
+  const sold=items.filter(i=>i.status==='sold');
+  const listed=items.filter(i=>i.status==='listed');
+  const active=items.filter(i=>i.status==='active');
+  const totalCost=items.reduce((s,i)=>s+parseFloat(i.cost||0),0);
+  const totalRevenue=sold.reduce((s,i)=>s+parseFloat(i.soldPrice||0),0);
+  const totalProfit=sold.reduce((s,i)=>s+(profit(i)||0),0);
+  const roiItems=sold.filter(i=>roi(i)!=null);
+  const avgROI=roiItems.length?roiItems.reduce((s,i)=>s+roi(i),0)/roiItems.length:null;
+  const f=n=>n!==null&&n!==''&&n!==undefined?'$'+parseFloat(n).toFixed(2):'—';
+  const pSign=n=>n>=0?'+':'';
+
+  const statusColor=s=>s==='sold'?'#16a34a':s==='listed'?'#0369a1':'#b45309';
+  const profitColor=p=>p===null?'#666':p>=0?'#16a34a':'#dc2626';
+
+  const tableRows=items.map(item=>{
+    const p=profit(item);
+    const r=roi(item);
+    return `<tr>
+      <td>${item.name}${item.category?`<br><small style="color:#999">${item.category}</small>`:''}</td>
+      <td style="text-align:right">${f(item.cost)}</td>
+      <td style="text-align:right">${item.listedPrice!==''?f(item.listedPrice):'—'}</td>
+      <td style="text-align:right">${item.status==='sold'?f(item.soldPrice):'—'}</td>
+      <td style="text-align:right;font-weight:600;color:${profitColor(p)}">${p!==null?pSign(p)+f(p):'—'}</td>
+      <td style="text-align:right;color:${profitColor(r)}">${r!==null?pSign(r)+r.toFixed(1)+'%':'—'}</td>
+      <td style="text-align:center"><span style="background:${statusColor(item.status)}22;color:${statusColor(item.status)};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase">${item.status}</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('pdf-report').innerHTML=`
+    <div style="font-family:Georgia,serif;color:#111;max-width:900px;margin:0 auto">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:16px;border-bottom:2px solid #111">
+        <div>
+          <div style="font-size:28px;font-weight:700;letter-spacing:-0.5px">Marketplace Report</div>
+          <div style="font-size:13px;color:#666;margin-top:4px">Generated ${date}</div>
+        </div>
+        <div style="text-align:right;font-size:12px;color:#999">${items.length} items tracked</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px">
+        <div style="background:#f5f5f5;border-radius:8px;padding:14px">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#999;margin-bottom:4px">Invested</div>
+          <div style="font-size:22px;font-weight:700">${f(totalCost)}</div>
+        </div>
+        <div style="background:#f5f5f5;border-radius:8px;padding:14px">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#999;margin-bottom:4px">Revenue</div>
+          <div style="font-size:22px;font-weight:700;color:#16a34a">${f(totalRevenue)}</div>
+        </div>
+        <div style="background:#f5f5f5;border-radius:8px;padding:14px">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#999;margin-bottom:4px">Net Profit</div>
+          <div style="font-size:22px;font-weight:700;color:${totalProfit>=0?'#16a34a':'#dc2626'}">${pSign(totalProfit)}${f(totalProfit)}</div>
+        </div>
+        <div style="background:#f5f5f5;border-radius:8px;padding:14px">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#999;margin-bottom:4px">Avg ROI</div>
+          <div style="font-size:22px;font-weight:700;color:${avgROI!=null&&avgROI>=0?'#16a34a':avgROI!=null?'#dc2626':'#111'}">${avgROI!=null?pSign(avgROI)+avgROI.toFixed(1)+'%':'—'}</div>
+        </div>
+      </div>
+
+      <div style="font-size:12px;color:#666;margin-bottom:12px">${sold.length} sold &nbsp;·&nbsp; ${listed.length} listed &nbsp;·&nbsp; ${active.length} active</div>
+
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="border-bottom:2px solid #111">
+            <th style="text-align:left;padding:8px 10px 8px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:#666;font-weight:600">Item</th>
+            <th style="text-align:right;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:#666;font-weight:600">Cost</th>
+            <th style="text-align:right;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:#666;font-weight:600">Listed</th>
+            <th style="text-align:right;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:#666;font-weight:600">Sold for</th>
+            <th style="text-align:right;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:#666;font-weight:600">Profit</th>
+            <th style="text-align:right;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:#666;font-weight:600">ROI</th>
+            <th style="text-align:center;padding:8px 0 8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:#666;font-weight:600">Status</th>
+          </tr>
+        </thead>
+        <tbody>${tableRows}</tbody>
+        <tfoot>
+          <tr style="border-top:2px solid #111;font-weight:700">
+            <td style="padding:10px 10px 0 0">TOTAL</td>
+            <td style="text-align:right;padding:10px 10px 0">${f(totalCost)}</td>
+            <td></td>
+            <td style="text-align:right;padding:10px 10px 0">${f(totalRevenue)}</td>
+            <td style="text-align:right;padding:10px 10px 0;color:${totalProfit>=0?'#16a34a':'#dc2626'}">${pSign(totalProfit)}${f(totalProfit)}</td>
+            <td style="text-align:right;padding:10px 10px 0;color:${avgROI!=null&&avgROI>=0?'#16a34a':avgROI!=null?'#dc2626':'#111'}">${avgROI!=null?pSign(avgROI)+avgROI.toFixed(1)+'%':'—'}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      ${items.some(i=>i.notes)?`
+      <div style="margin-top:32px;padding-top:20px;border-top:1px solid #ddd">
+        <div style="font-size:14px;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.05em;color:#666">Notes</div>
+        ${items.filter(i=>i.notes).map(i=>`<div style="margin-bottom:8px"><strong>${i.name}:</strong> <span style="color:#555">${i.notes}</span></div>`).join('')}
+      </div>`:''}
+
+      <div style="margin-top:40px;font-size:10px;color:#bbb;border-top:1px solid #eee;padding-top:10px">FB Marketplace Tracker &nbsp;·&nbsp; ${date}</div>
+    </div>`;
+
+  document.getElementById('pdf-report').style.display='block';
+  closeExport();
+  setTimeout(()=>{
+    window.print();
+    document.getElementById('pdf-report').style.display='none';
+  },200);
+}
+
+document.getElementById('edit-sheet').addEventListener('click',function(e){if(e.target===this)closeSheet();});
+document.getElementById('export-sheet').addEventListener('click',function(e){if(e.target===this)closeExport();});
+
+loadItems();
+</script>
+</body>
+</html>
