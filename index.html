@@ -446,13 +446,26 @@ select.form-input{appearance:none;-webkit-appearance:none;background-image:url("
           <label class="form-label">Category</label>
           <select class="form-input" id="add-cat">
             <option value="">Select…</option>
+            <option>Art &amp; Crafts</option>
+            <option>Automotive</option>
+            <option>Baby &amp; Kids</option>
+            <option>Beauty &amp; Personal Care</option>
+            <option>Books</option>
+            <option>Clothing</option>
+            <option>Collectibles</option>
             <option>Electronics</option>
             <option>Furniture</option>
-            <option>Clothing</option>
-            <option>Toys &amp; games</option>
+            <option>Health &amp; Wellness</option>
+            <option>Home &amp; Garden</option>
+            <option>Kitchen &amp; Appliances</option>
+            <option>Musical Instruments</option>
+            <option>Office Supplies</option>
+            <option>Pet Supplies</option>
             <option>Sports</option>
+            <option>Tickets &amp; Events</option>
             <option>Tools</option>
-            <option>Books</option>
+            <option>Toys &amp; Games</option>
+            <option>Video Games</option>
             <option>Other</option>
           </select>
         </div>
@@ -464,7 +477,7 @@ select.form-input{appearance:none;-webkit-appearance:none;background-image:url("
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Quantity</label>
-          <input class="form-input" type="number" id="add-qty" min="1" step="1" value="1" inputmode="numeric" style="width:80px" oninput="onQtyChange('add-qty',this.value)">
+          <input class="form-input" type="number" id="add-qty" min="1" step="1" value="1" inputmode="numeric" oninput="onQtyChange('add-qty',this.value)">
         </div>
         <div class="form-group">
           <label class="form-label">Cost per unit ($) *</label>
@@ -557,13 +570,26 @@ select.form-input{appearance:none;-webkit-appearance:none;background-image:url("
           <label class="form-label">Category</label>
           <select class="form-input" id="edit-cat">
             <option value="">Select…</option>
+            <option>Art &amp; Crafts</option>
+            <option>Automotive</option>
+            <option>Baby &amp; Kids</option>
+            <option>Beauty &amp; Personal Care</option>
+            <option>Books</option>
+            <option>Clothing</option>
+            <option>Collectibles</option>
             <option>Electronics</option>
             <option>Furniture</option>
-            <option>Clothing</option>
-            <option>Toys &amp; games</option>
+            <option>Health &amp; Wellness</option>
+            <option>Home &amp; Garden</option>
+            <option>Kitchen &amp; Appliances</option>
+            <option>Musical Instruments</option>
+            <option>Office Supplies</option>
+            <option>Pet Supplies</option>
             <option>Sports</option>
+            <option>Tickets &amp; Events</option>
             <option>Tools</option>
-            <option>Books</option>
+            <option>Toys &amp; Games</option>
+            <option>Video Games</option>
             <option>Other</option>
           </select>
         </div>
@@ -575,7 +601,7 @@ select.form-input{appearance:none;-webkit-appearance:none;background-image:url("
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Qty</label>
-          <input class="form-input" type="number" id="edit-qty" min="1" step="1" value="1" inputmode="numeric" style="width:80px">
+          <input class="form-input" type="number" id="edit-qty" min="1" step="1" value="1" inputmode="numeric">
         </div>
         <div class="form-group">
           <label class="form-label">Cost per unit ($)</label>
@@ -697,8 +723,12 @@ let activeSort = 'date-desc';
 let chartInst = null;
 
 const categoryEmoji = {
-  'Electronics':'📱','Furniture':'🪑','Clothing':'👕','Toys & games':'🎮',
-  'Sports':'⚽','Tools':'🔧','Books':'📚','Other':'📦',''  :'📦'
+  'Art & Crafts':'🎨','Automotive':'🚗','Baby & Kids':'🍼','Beauty & Personal Care':'💄',
+  'Books':'📚','Clothing':'👕','Collectibles':'🏆','Electronics':'📱',
+  'Furniture':'🪑','Health & Wellness':'💊','Home & Garden':'🏡',
+  'Kitchen & Appliances':'🍳','Musical Instruments':'🎸','Office Supplies':'📎',
+  'Pet Supplies':'🐾','Sports':'⚽','Tickets & Events':'🎟️','Tools':'🔧',
+  'Toys & Games':'🎮','Video Games':'🕹️','Other':'📦',''  :'📦'
 };
 
 function loadItems(){
