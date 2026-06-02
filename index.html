@@ -1479,7 +1479,7 @@ async function submitFeedback(){
       document.getElementById('feedback-body').innerHTML = `
         <div class="feedback-sent">
           <div class="feedback-sent-icon">${selectedVote === 'yes' ? '🎉' : '🙏'}</div>
-          <div class="feedback-sent-msg">${selectedVote === 'yes' ? 'Awesome! Thanks for the vote.<br>We'll keep building.' : 'Thanks for being honest.<br>We appreciate the feedback.'}</div>
+          <div class="feedback-sent-msg">${selectedVote === 'yes' ? 'Awesome! Thanks for the vote.<br>We\'ll keep building.' : 'Thanks for being honest.<br>We appreciate the feedback.'}</div>
         </div>`;
       setTimeout(closeFeedback, 2500);
     } else {
