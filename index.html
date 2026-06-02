@@ -1194,7 +1194,7 @@ function openExport(){
   const f=n=>n!==null&&n!==''&&n!==undefined?'$'+parseFloat(n).toFixed(2):'—';
   document.getElementById('export-summary').innerHTML=
     `<div><strong>${items.length}</strong> items total &nbsp;·&nbsp; <strong>${sold.length}</strong> sold &nbsp;·&nbsp; <strong>${listed.length}</strong> listed</div>`+
-    `<div>Invested: <strong>${f(totalCost)}</strong> &nbsp;·&nbsp; Revenue: <strong>${f(totalRevenue)}</strong> &nbsp;·&nbsp; Profit: <strong style="color:${totalProfit>=0?'var(--green)':'var(--red)'}">${totalProfit>=0?'+':''}${f(totalProfit)}</strong></div>`;
+    `<div>Invested: <strong>${f(totalCost)}</strong> &nbsp;·&nbsp; Revenue: <strong>${f(totalRev)}</strong> &nbsp;·&nbsp; Profit: <strong style="color:${totalProfit>=0?'var(--green)':'var(--red)'}">${totalProfit>=0?'+':''}${f(totalProfit)}</strong></div>`;
   document.getElementById('export-sheet').classList.add('open');
 }
 
