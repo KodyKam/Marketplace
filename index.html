@@ -463,13 +463,20 @@ select.form-input{appearance:none;-webkit-appearance:none;background-image:url("
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Cost paid ($) *</label>
-          <input class="form-input money" type="number" id="add-cost" min="0" step="0.01" placeholder="0.00" inputmode="decimal">
+          <label class="form-label">Quantity</label>
+          <input class="form-input" type="number" id="add-qty" min="1" step="1" value="1" inputmode="numeric" style="width:80px" oninput="onQtyChange('add-qty',this.value)">
         </div>
         <div class="form-group">
-          <label class="form-label">Listed for ($)</label>
+          <label class="form-label">Cost per unit ($) *</label>
+          <input class="form-input money" type="number" id="add-cost" min="0" step="0.01" placeholder="0.00" inputmode="decimal">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Listed per unit ($)</label>
           <input class="form-input money" type="number" id="add-listed" min="0" step="0.01" placeholder="0.00" inputmode="decimal">
         </div>
+        <div class="form-group" style="visibility:hidden"></div>
       </div>
       <div class="form-group">
         <label class="form-label">Status</label>
@@ -480,6 +487,7 @@ select.form-input{appearance:none;-webkit-appearance:none;background-image:url("
         </div>
       </div>
       <div id="sold-fields" style="display:none">
+        <div id="add-sold-single">
         <div class="form-row">
           <div class="form-group" style="margin-bottom:0">
             <label class="form-label">Sold for ($)</label>
@@ -489,6 +497,10 @@ select.form-input{appearance:none;-webkit-appearance:none;background-image:url("
             <label class="form-label">Date sold</label>
             <input class="form-input" type="date" id="add-sold-date">
           </div>
+        </div>
+        </div>
+        <div id="add-sold-multi" style="display:none">
+          <p style="font-size:12px;color:var(--text3);font-family:'DM Mono',monospace">Mark units sold individually after saving.</p>
         </div>
       </div>
       <div class="form-group">
@@ -562,12 +574,40 @@ select.form-input{appearance:none;-webkit-appearance:none;background-image:url("
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Cost ($)</label>
-          <input class="form-input money" type="number" id="edit-cost" min="0" step="0.01" inputmode="decimal">
+          <label class="form-label">Qty</label>
+          <input class="form-input" type="number" id="edit-qty" min="1" step="1" value="1" inputmode="numeric" style="width:80px">
         </div>
         <div class="form-group">
-          <label class="form-label">Listed for ($)</label>
+          <label class="form-label">Cost per unit ($)</label>
+          <input class="form-input money" type="number" id="edit-cost" min="0" step="0.01" inputmode="decimal">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Listed per unit ($)</label>
           <input class="form-input money" type="number" id="edit-listed" min="0" step="0.01" inputmode="decimal">
+        </div>
+        <div class="form-group" style="visibility:hidden"></div>
+      </div>
+      <!-- Units sold panel -->
+      <div id="edit-units-panel" style="display:none;margin-bottom:14px">
+        <div class="units-bar">
+          <div class="units-label" id="edit-units-label">Units sold</div>
+          <div class="units-dots" id="edit-units-dots"></div>
+          <div class="units-progress"><div class="units-progress-bar" id="edit-units-bar"></div></div>
+        </div>
+        <div id="edit-unit-sell-form" style="display:none" class="unit-sell-form">
+          <div class="form-row" style="margin-bottom:8px">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Sold price ($)</label>
+              <input class="form-input money" type="number" id="unit-sold-price" min="0" step="0.01" placeholder="0.00" inputmode="decimal">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Date sold</label>
+              <input class="form-input" type="date" id="unit-sold-date">
+            </div>
+          </div>
+          <button class="submit-btn" style="padding:11px;font-size:14px;margin-bottom:0" onclick="confirmUnitSold()">Confirm sale</button>
         </div>
       </div>
       <div class="form-group">
@@ -579,6 +619,7 @@ select.form-input{appearance:none;-webkit-appearance:none;background-image:url("
         </div>
       </div>
       <div id="edit-sold-fields" style="display:none">
+        <div id="edit-sold-single">
         <div class="form-row">
           <div class="form-group" style="margin-bottom:0">
             <label class="form-label">Sold for ($)</label>
@@ -588,6 +629,7 @@ select.form-input{appearance:none;-webkit-appearance:none;background-image:url("
             <label class="form-label">Date sold</label>
             <input class="form-input" type="date" id="edit-sold-date">
           </div>
+        </div>
         </div>
       </div>
       <div class="form-group" style="margin-top:14px">
@@ -677,15 +719,58 @@ function fmt(n){
 }
 
 function profit(item){
+  const qty=item.qty||1;
+  if(qty>1){
+    // multi-unit: sum up sold units
+    const units=item.units||[];
+    const soldUnits=units.filter(u=>u.soldPrice!==undefined&&u.soldPrice!=='');
+    if(!soldUnits.length)return null;
+    const rev=soldUnits.reduce((s,u)=>s+parseFloat(u.soldPrice),0);
+    const cost=soldUnits.length*(parseFloat(item.cost||0));
+    return rev-cost;
+  }
   if(item.status!=='sold'||item.soldPrice===''||item.soldPrice===null||item.soldPrice===undefined)return null;
   return parseFloat(item.soldPrice)-parseFloat(item.cost||0);
+}
+
+function unitsSold(item){return (item.units||[]).filter(u=>u.soldPrice!==undefined&&u.soldPrice!=='').length;}
+function unitsRemaining(item){return (item.qty||1)-unitsSold(item);}
+function totalRevenue_item(item){
+  const qty=item.qty||1;
+  if(qty>1) return (item.units||[]).filter(u=>u.soldPrice!==undefined).reduce((s,u)=>s+parseFloat(u.soldPrice),0);
+  return item.soldPrice!==''&&item.soldPrice!==undefined?parseFloat(item.soldPrice):0;
+}
+function itemStatus(item){
+  const qty=item.qty||1;
+  if(qty===1)return item.status;
+  const sold=unitsSold(item);
+  if(sold===0)return item.status==='listed'?'listed':'active';
+  if(sold>=qty)return 'sold';
+  return 'listed';
 }
 
 function roi(item){
   const p=profit(item);
   if(p===null||!parseFloat(item.cost))return null;
+  const qty=item.qty||1;
+  if(qty>1){
+    const sold=unitsSold(item);
+    if(!sold)return null;
+    return p/(sold*parseFloat(item.cost))*100;
+  }
   return p/parseFloat(item.cost)*100;
 }
+
+function onQtyChange(elId,val){
+  const next=Math.max(1,parseInt(val)||1);
+  if(elId==='add-qty'){
+    const single=document.getElementById('add-sold-single');
+    const multi=document.getElementById('add-sold-multi');
+    if(single&&multi){single.style.display=next>1?'none':'block';multi.style.display=next>1?'block':'none';}
+  }
+}
+
+function getQty(elId){return Math.max(1,parseInt(document.getElementById(elId).value||'1'));}
 
 function showToast(msg,color){
   const t=document.getElementById('toast');
@@ -744,6 +829,11 @@ function clearForm(){
   document.getElementById('add-cat').value='';
   document.getElementById('add-date').value='';
   document.getElementById('add-sold-date').value='';
+  document.getElementById('add-qty').value='1';
+  const single=document.getElementById('add-sold-single');
+  const multi=document.getElementById('add-sold-multi');
+  if(single)single.style.display='block';
+  if(multi)multi.style.display='none';
   setStatus('active');
 }
 
@@ -751,17 +841,25 @@ function addItem(){
   const name=document.getElementById('add-name').value.trim();
   const cost=document.getElementById('add-cost').value;
   if(!name){showToast('Enter an item name','#ff5252');return;}
-  if(cost===''||isNaN(cost)){showToast('Enter the cost paid','#ff5252');return;}
+  if(cost===''||isNaN(cost)){showToast('Enter the cost per unit','#ff5252');return;}
+  const qty=getQty('add-qty');
   const soldVal=document.getElementById('add-sold').value;
+  // build units array for multi-qty
+  const units=qty>1?Array.from({length:qty},(_,i)=>({idx:i})):[];
+  // for single qty sold
+  if(qty===1&&currentStatus==='sold'&&soldVal!==''){
+    units.push({idx:0,soldPrice:parseFloat(soldVal),dateSold:document.getElementById('add-sold-date').value});
+  }
   const item={
-    id:uid(),name,
+    id:uid(),name,qty,
     category:document.getElementById('add-cat').value,
     datePurchased:document.getElementById('add-date').value,
     cost:parseFloat(cost),
     listedPrice:document.getElementById('add-listed').value!==''?parseFloat(document.getElementById('add-listed').value):'',
     status:currentStatus,
-    soldPrice:currentStatus==='sold'&&soldVal!==''?parseFloat(soldVal):'',
-    dateSold:document.getElementById('add-sold-date').value,
+    soldPrice:qty===1&&currentStatus==='sold'&&soldVal!==''?parseFloat(soldVal):'',
+    dateSold:qty===1?document.getElementById('add-sold-date').value:'',
+    units,
     notes:document.getElementById('add-notes').value,
     createdAt:Date.now()
   };
@@ -772,20 +870,104 @@ function addItem(){
   showScreen('items');
 }
 
+let pendingUnitIdx=null;
+
 function openEdit(id){
   const item=items.find(i=>i.id===id);
   if(!item)return;
+  pendingUnitIdx=null;
   document.getElementById('edit-id').value=id;
   document.getElementById('edit-name').value=item.name;
   document.getElementById('edit-cat').value=item.category||'';
   document.getElementById('edit-date').value=item.datePurchased||'';
+  document.getElementById('edit-qty').value=item.qty||1;
   document.getElementById('edit-cost').value=item.cost;
   document.getElementById('edit-listed').value=item.listedPrice||'';
   document.getElementById('edit-sold').value=item.soldPrice||'';
   document.getElementById('edit-sold-date').value=item.dateSold||'';
   document.getElementById('edit-notes').value=item.notes||'';
-  setEditStatus(item.status||'active');
+  const qty=item.qty||1;
+  const unitsPanel=document.getElementById('edit-units-panel');
+  const soldSingle=document.getElementById('edit-sold-single');
+  const sellForm=document.getElementById('edit-unit-sell-form');
+  if(sellForm)sellForm.style.display='none';
+  if(qty>1){
+    unitsPanel.style.display='block';
+    if(soldSingle)soldSingle.style.display='none';
+    renderUnitDots(item);
+    // auto-set status based on units
+    const st=itemStatus(item);
+    setEditStatus(st);
+    document.getElementById('edit-sold-fields').style.display='none';
+  } else {
+    unitsPanel.style.display='none';
+    if(soldSingle)soldSingle.style.display='block';
+    setEditStatus(item.status||'active');
+  }
   document.getElementById('edit-sheet').classList.add('open');
+}
+
+function renderUnitDots(item){
+  const qty=item.qty||1;
+  const units=item.units||[];
+  const sold=unitsSold(item);
+  document.getElementById('edit-units-label').textContent=`${sold}/${qty} units sold`;
+  document.getElementById('edit-units-bar').style.width=`${(sold/qty)*100}%`;
+  document.getElementById('edit-units-dots').innerHTML=Array.from({length:qty},(_,i)=>{
+    const u=units[i]||{};
+    const isSold=u.soldPrice!==undefined&&u.soldPrice!=='';
+    const isPending=pendingUnitIdx===i;
+    const cls=isPending?'unit-dot pending':isSold?'unit-dot sold-unit':'unit-dot';
+    const label=isSold?'✓':`#${i+1}`;
+    const title=isSold?`$${parseFloat(u.soldPrice).toFixed(2)}`:isPending?'…':'tap to sell';
+    return `<div class="${cls}" onclick="tapUnit(${i})" title="${title}">${label}</div>`;
+  }).join('');
+}
+
+function tapUnit(idx){
+  const id=document.getElementById('edit-id').value;
+  const item=items.find(i=>i.id===id);
+  if(!item)return;
+  const units=item.units||[];
+  const u=units[idx]||{};
+  if(u.soldPrice!==undefined&&u.soldPrice!==''){
+    // toggle: un-sell this unit
+    if(!confirm(`Remove sale record for unit #${idx+1}?`))return;
+    units[idx]={idx};
+    item.units=units;
+    item.status=itemStatus(item);
+    pendingUnitIdx=null;
+    saveItems();renderUnitDots(item);
+    document.getElementById('edit-unit-sell-form').style.display='none';
+    showToast('Unit sale removed','#ffab40');
+    renderItems();renderDashboard();
+    return;
+  }
+  pendingUnitIdx=idx;
+  renderUnitDots(item);
+  const sellForm=document.getElementById('edit-unit-sell-form');
+  sellForm.style.display='block';
+  document.getElementById('unit-sold-price').value=item.listedPrice||'';
+  document.getElementById('unit-sold-date').value=new Date().toISOString().slice(0,10);
+}
+
+function confirmUnitSold(){
+  const id=document.getElementById('edit-id').value;
+  const idx=items.findIndex(i=>i.id===id);
+  if(idx<0||pendingUnitIdx===null)return;
+  const price=document.getElementById('unit-sold-price').value;
+  if(!price||isNaN(price)){showToast('Enter a sold price','#ff5252');return;}
+  const item=items[idx];
+  const units=item.units||Array.from({length:item.qty||1},(_,i)=>({idx:i}));
+  units[pendingUnitIdx]={idx:pendingUnitIdx,soldPrice:parseFloat(price),dateSold:document.getElementById('unit-sold-date').value};
+  item.units=units;
+  item.status=itemStatus(item);
+  pendingUnitIdx=null;
+  saveItems();
+  document.getElementById('edit-unit-sell-form').style.display='none';
+  renderUnitDots(item);
+  showToast(`✓ Unit sold for $${parseFloat(price).toFixed(2)}`);
+  renderItems();renderDashboard();
 }
 
 function closeSheet(){document.getElementById('edit-sheet').classList.remove('open');}
@@ -795,15 +977,24 @@ function saveEdit(){
   const idx=items.findIndex(i=>i.id===id);
   if(idx<0)return;
   const soldVal=document.getElementById('edit-sold').value;
+  const newQty=getQty('edit-qty');
+  const oldQty=items[idx].qty||1;
+  let units=items[idx].units||[];
+  // if qty changed, resize units array
+  if(newQty!==oldQty){
+    units=Array.from({length:newQty},(_,i)=>units[i]||{idx:i});
+  }
+  const resolvedStatus=newQty>1?itemStatus({...items[idx],qty:newQty,units}):editStatus;
   items[idx]={...items[idx],
     name:document.getElementById('edit-name').value.trim(),
     category:document.getElementById('edit-cat').value,
     datePurchased:document.getElementById('edit-date').value,
+    qty:newQty,units,
     cost:parseFloat(document.getElementById('edit-cost').value)||0,
     listedPrice:document.getElementById('edit-listed').value!==''?parseFloat(document.getElementById('edit-listed').value):'',
-    status:editStatus,
-    soldPrice:editStatus==='sold'&&soldVal!==''?parseFloat(soldVal):'',
-    dateSold:document.getElementById('edit-sold-date').value,
+    status:resolvedStatus,
+    soldPrice:newQty===1&&editStatus==='sold'&&soldVal!==''?parseFloat(soldVal):'',
+    dateSold:newQty===1?document.getElementById('edit-sold-date').value:'',
     notes:document.getElementById('edit-notes').value
   };
   saveItems();
@@ -862,27 +1053,34 @@ function itemCard(item,i){
   const roiStr=r!==null?` · ${r>=0?'+':''}${r.toFixed(0)}%`:'';
   const discount=item.listedPrice!==''&&item.soldPrice!==''?((item.listedPrice-item.soldPrice)/item.listedPrice*100):null;
   const meta=item.category||(item.datePurchased?new Date(item.datePurchased).toLocaleDateString('en-CA',{month:'short',day:'numeric'}):'');
-  const quickBtn=item.status!=='sold'?`<div class="quick-sold" onclick="quickSold('${item.id}',event)">Mark sold →</div>`:'';
-  return `<div class="item-card ${statusClass}" onclick="openEdit('${item.id}')" style="animation-delay:${i*0.04}s">
-    <div class="item-icon ${statusClass}">${em}</div>
+  const qty=item.qty||1;
+  const effStatus=itemStatus(item);
+  const effStatusClass=effStatus==='sold'?'sold':effStatus==='listed'?'listed':'active-status';
+  const soldCount=qty>1?unitsSold(item):null;
+  const qtyStr=qty>1?` · ${soldCount}/${qty} sold`:'';
+  const quickBtn=effStatus!=='sold'&&qty===1?`<div class="quick-sold" onclick="quickSold('${item.id}',event)">Mark sold →</div>`:'';
+  const unitsBar=qty>1?`<div class="units-progress" style="margin-top:6px;width:100px"><div class="units-progress-bar" style="width:${qty>0?(soldCount/qty*100):0}%"></div></div>`:'';
+  return `<div class="item-card ${effStatusClass}" onclick="openEdit('${item.id}')" style="animation-delay:${i*0.04}s">
+    <div class="item-icon ${effStatusClass}">${em}</div>
     <div class="item-body">
       <div class="item-name">${item.name}</div>
-      <div class="item-meta">${meta}${discount!=null?` · ${discount.toFixed(0)}% off ask`:''}</div>
+      <div class="item-meta">${meta}${qtyStr}${discount!=null&&qty===1?` · ${discount.toFixed(0)}% off ask`:''}</div>
+      ${unitsBar}
       ${quickBtn}
     </div>
     <div class="item-right">
       <div class="item-profit ${profitClass}">${profitStr}</div>
-      <div class="item-status-label">${item.status}${roiStr}</div>
+      <div class="item-status-label">${effStatus}${roiStr}</div>
     </div>
   </div>`;
 }
 
 function renderDashboard(){
-  const sold=items.filter(i=>i.status==='sold');
-  const listed=items.filter(i=>i.status==='listed');
-  const active=items.filter(i=>i.status==='active');
-  const totalCost=items.reduce((s,i)=>s+parseFloat(i.cost||0),0);
-  const totalRevenue=sold.reduce((s,i)=>s+parseFloat(i.soldPrice||0),0);
+  const sold=items.filter(i=>itemStatus(i)==='sold');
+  const listed=items.filter(i=>itemStatus(i)==='listed');
+  const active=items.filter(i=>itemStatus(i)==='active');
+  const totalCost=items.reduce((s,i)=>s+(parseFloat(i.cost||0)*(i.qty||1)),0);
+  const totalRevenue=items.reduce((s,i)=>s+totalRevenue_item(i),0);
   const totalProfit=sold.reduce((s,i)=>s+(profit(i)||0),0);
   const roiItems=sold.filter(i=>roi(i)!=null);
   const avgROI=roiItems.length?roiItems.reduce((s,i)=>s+roi(i),0)/roiItems.length:null;
@@ -960,7 +1158,7 @@ function openExport(){
   const sold=items.filter(i=>i.status==='sold');
   const listed=items.filter(i=>i.status==='listed');
   const totalCost=items.reduce((s,i)=>s+parseFloat(i.cost||0),0);
-  const totalRevenue=sold.reduce((s,i)=>s+parseFloat(i.soldPrice||0),0);
+  
   const totalProfit=sold.reduce((s,i)=>s+(profit(i)||0),0);
   const f=n=>n!==null&&n!==''&&n!==undefined?'$'+parseFloat(n).toFixed(2):'—';
   document.getElementById('export-summary').innerHTML=
@@ -979,23 +1177,28 @@ function escapeCsv(v){
 }
 
 function exportCSV(){
-  const headers=['Name','Category','Date Purchased','Cost ($)','Listed Price ($)','Status','Sold Price ($)','Date Sold','Profit ($)','ROI (%)','Discount Off Ask (%)','Notes'];
+  const headers=['Name','Category','Date Purchased','Qty','Cost/Unit ($)','Total Cost ($)','Listed/Unit ($)','Status','Units Sold','Avg Sold Price ($)','Total Revenue ($)','Profit ($)','ROI (%)','Notes'];
   const rows=items.map(item=>{
     const p=profit(item);
     const r=roi(item);
-    const disc=item.listedPrice!==''&&item.soldPrice!==''?((item.listedPrice-item.soldPrice)/item.listedPrice*100).toFixed(1):'';
+    const qty=item.qty||1;
+    const sold=qty>1?unitsSold(item):(item.status==='sold'?1:0);
+    const rev=qty>1?(item.units||[]).filter(u=>u.soldPrice!==undefined&&u.soldPrice!=='').reduce((s,u)=>s+parseFloat(u.soldPrice),0):(item.soldPrice!==''&&item.soldPrice!==undefined?parseFloat(item.soldPrice):0);
+    const avgSold=sold>0?(rev/sold).toFixed(2):'';
     return [
       item.name,
       item.category||'',
       item.datePurchased||'',
+      qty,
       item.cost,
+      (parseFloat(item.cost||0)*qty).toFixed(2),
       item.listedPrice!==''?item.listedPrice:'',
-      item.status,
-      item.soldPrice!==''?item.soldPrice:'',
-      item.dateSold||'',
+      itemStatus(item),
+      sold,
+      avgSold,
+      rev>0?rev.toFixed(2):'',
       p!==null?p.toFixed(2):'',
       r!==null?r.toFixed(1):'',
-      disc,
       item.notes||''
     ].map(escapeCsv).join(',');
   });
@@ -1013,11 +1216,11 @@ function exportCSV(){
 
 function exportPDF(){
   const date=new Date().toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'});
-  const sold=items.filter(i=>i.status==='sold');
-  const listed=items.filter(i=>i.status==='listed');
-  const active=items.filter(i=>i.status==='active');
-  const totalCost=items.reduce((s,i)=>s+parseFloat(i.cost||0),0);
-  const totalRevenue=sold.reduce((s,i)=>s+parseFloat(i.soldPrice||0),0);
+  const sold=items.filter(i=>itemStatus(i)==='sold');
+  const listed=items.filter(i=>itemStatus(i)==='listed');
+  const active=items.filter(i=>itemStatus(i)==='active');
+  const totalCost=items.reduce((s,i)=>s+(parseFloat(i.cost||0)*(i.qty||1)),0);
+  const totalRevenue=items.reduce((s,i)=>s+totalRevenue_item(i),0);
   const totalProfit=sold.reduce((s,i)=>s+(profit(i)||0),0);
   const roiItems=sold.filter(i=>roi(i)!=null);
   const avgROI=roiItems.length?roiItems.reduce((s,i)=>s+roi(i),0)/roiItems.length:null;
