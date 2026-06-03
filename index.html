@@ -1486,6 +1486,8 @@ async function submitFeedback(){
           <div class="feedback-sent-icon">${selectedVote === 'yes' ? '🎉' : '🙏'}</div>
           <div class="feedback-sent-msg">${selectedVote === 'yes' ? 'Awesome! Thanks for the vote.<br>We\'ll keep building.' : 'Thanks for being honest.<br>We appreciate the feedback.'}</div>
         </div>`;
+      document.getElementById('feedback-fab').style.display='none';
+      localStorage.setItem('fb_feedback_sent','1');
       setTimeout(closeFeedback, 2500);
     } else {
       throw new Error('Failed');
@@ -1501,6 +1503,7 @@ document.getElementById('feedback-sheet').addEventListener('click', function(e){
 
 document.getElementById('export-sheet').addEventListener('click',function(e){if(e.target===this)closeExport();});
 
+if(localStorage.getItem('fb_feedback_sent')){document.getElementById('feedback-fab').style.display='none';}
 loadItems();
 </script>
 
