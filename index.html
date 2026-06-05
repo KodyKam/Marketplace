@@ -454,7 +454,7 @@ select.form-input{appearance:none;-webkit-appearance:none;background-image:url("
     <div id="recent-cards"></div>
     <div style="height:8px"></div>
     <div class="footnote">
-      Market. v1.0 &nbsp;·&nbsp; Built with &#10084;&#65039; by Kamara Alleyne in Toronto, ON &nbsp;·&nbsp; <a href="https://github.com/KodyKam" target="_blank">github.com/KodyKam</a>
+      Market. v1.0 &nbsp;·&nbsp; Built by Kamara Alleyne in Toronto, ON &nbsp;·&nbsp; <a href="https://github.com/KodyKam" target="_blank">github.com/KodyKam</a>
     </div>
   </div>
 
@@ -1237,9 +1237,12 @@ function renderDashboard(){
   `;
 
   const soldWithProfit=items.filter(i=>profit(i)!=null).slice(0,10);
+  const chartWrap=document.querySelector('.chart-wrap');
+  // Always restore the canvas in case a previous render replaced it with empty state
+  chartWrap.innerHTML='<canvas id="profitChart" role="img" aria-label="Profit per sold item bar chart"></canvas>';
   const canvas=document.getElementById('profitChart');
   if(!soldWithProfit.length){
-    canvas.parentElement.innerHTML='<div class="empty" style="padding:24px 0"><div class="empty-icon">📊</div><div class="empty-text">Sell something to see profit data</div></div>';
+    chartWrap.innerHTML='<div class="empty" style="padding:24px 0"><div class="empty-icon">📊</div><div class="empty-text">Sell something to see profit data</div></div>';
   } else {
     if(chartInst)chartInst.destroy();
     const profits=soldWithProfit.map(i=>profit(i));
